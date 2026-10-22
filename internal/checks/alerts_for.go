@@ -18,6 +18,19 @@ func NewAlertsForCheck() AlertsForChecksFor {
 	return AlertsForChecksFor{}
 }
 
+type AlertsForSettings struct {
+	Redundant        *bool `hcl:"redundant,optional" json:"redundant,omitzero"`
+	redundantEnabled bool
+}
+
+func (c *AlertsForSettings) Validate() error {
+	c.redundantEnabled = true
+	if c.Redundant != nil {
+		c.redundantEnabled = *c.Redundant
+	}
+	return nil
+}
+
 type AlertsForChecksFor struct{}
 
 func (c AlertsForChecksFor) Meta() CheckMeta {
@@ -41,22 +54,31 @@ func (c AlertsForChecksFor) Reporter() string {
 	return AlertForCheckName
 }
 
-func (c AlertsForChecksFor) Check(_ context.Context, entry *discovery.Entry, _ []*discovery.Entry) (problems []Problem) {
+func (c AlertsForChecksFor) Check(ctx context.Context, entry *discovery.Entry, _ []*discovery.Entry) (problems []Problem) {
 	if entry.Rule.AlertingRule == nil {
 		return problems
 	}
 
+	var settings *AlertsForSettings
+	if s := ctx.Value(SettingsKey(c.Reporter())); s != nil {
+		settings = s.(*AlertsForSettings)
+	}
+	if settings == nil {
+		settings = &AlertsForSettings{}
+		_ = settings.Validate()
+	}
+
 	if entry.Rule.AlertingRule.For != nil {
-		problems = append(problems, c.checkField("for", entry.Rule.AlertingRule.For)...)
+		problems = append(problems, c.checkField(settings, "for", entry.Rule.AlertingRule.For)...)
 	}
 	if entry.Rule.AlertingRule.KeepFiringFor != nil {
-		problems = append(problems, c.checkField("keep_firing_for", entry.Rule.AlertingRule.KeepFiringFor)...)
+		problems = append(problems, c.checkField(settings, "keep_firing_for", entry.Rule.AlertingRule.KeepFiringFor)...)
 	}
 
 	return problems
 }
 
-func (c AlertsForChecksFor) checkField(name string, value *parser.YamlDuration) (problems []Problem) {
+func (c AlertsForChecksFor) checkField(settings *AlertsForSettings, name string, value *parser.YamlDuration) (problems []Problem) {
 	if value.ParseError != nil {
 		problems = append(problems, Problem{
 			Anchor:   AnchorAfter,
@@ -79,7 +101,7 @@ func (c AlertsForChecksFor) checkField(name string, value *parser.YamlDuration) 
 		return problems
 	}
 
-	if value.Value == 0 {
+	if settings.redundantEnabled && value.Value == 0 {
 		problems = append(problems, Problem{
 			Anchor:   AnchorAfter,
 			Lines:    value.Pos.Lines(),

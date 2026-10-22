@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.90.0
+
+### Added
+
+- [alerts/for](checks/alerts/for.md) check now supports `redundant` option
+  that can be used to disable reports about `for` and `keep_firing_for` fields
+  set to the default value - [#1956](https://github.com/cloudflare/pint/issues/1956).
+
 ## v0.89.4
 
 ### Fixed

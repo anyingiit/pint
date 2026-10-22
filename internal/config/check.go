@@ -26,6 +26,8 @@ func (c Check) MarshalJSONTo(enc *jsontext.Encoder) error {
 
 func (c Check) Decode() (s CheckSettings, err error) {
 	switch c.Name {
+	case checks.AlertForCheckName:
+		s = &checks.AlertsForSettings{}
 	case checks.SeriesCheckName:
 		s = &checks.PromqlSeriesSettings{}
 	case checks.RegexpCheckName:

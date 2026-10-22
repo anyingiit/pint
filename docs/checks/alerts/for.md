@@ -11,7 +11,27 @@ value or if it passes default value that can be removed to simplify rule.
 
 ## Configuration
 
-This check doesn't have any configuration options.
+This check supports setting extra configuration option to fine tune its behaviour.
+
+Syntax:
+
+```js
+check "alerts/for" {
+  redundant = true|false
+}
+```
+
+- `redundant` - enable or disable reports about `for` or `keep_firing_for`
+  fields that are set to the default value (`0`) and can be removed.
+  This is enabled by default. Invalid values are always reported.
+
+Example:
+
+```js
+check "alerts/for" {
+  redundant = false
+}
+```
 
 ## How to enable it
 

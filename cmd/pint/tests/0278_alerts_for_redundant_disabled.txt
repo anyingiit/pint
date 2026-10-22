@@ -1,0 +1,33 @@
+! exec pint --no-color lint --min-severity=info rules
+! stdout .
+cmp stderr stderr.txt
+
+-- stderr.txt --
+level=INFO msg="Loading configuration file" path=.pint.hcl
+level=INFO msg="Finding all rules to check" paths=["rules"]
+level=INFO msg="Checking Prometheus rules" entries=3 workers=10 online=true
+Bug: invalid duration (alerts/for)
+  ---> rules/0001.yml:12 -> `invalid-for`
+12 |     for: -5m
+              ^^^ not a valid duration string: "-5m"
+
+level=INFO msg="Problems found" Bug=1
+level=ERROR msg="Execution completed with error(s)" err="found 1 problem(s) with severity Bug or higher"
+-- rules/0001.yml --
+groups:
+- name: foo
+  rules:
+  - alert: default-for
+    expr: up == 0
+    for: 0m
+  - alert: default-keep-firing-for
+    expr: up == 0
+    keep_firing_for: 0s
+  - alert: invalid-for
+    expr: up == 0
+    for: -5m
+
+-- .pint.hcl --
+check "alerts/for" {
+  redundant = false
+}
